@@ -1,0 +1,6 @@
+[package]
+name = "neuralnet"
+version = "0.1.0"
+authors = ["Lars Mühmel <larsmuehmel@web.de>"]
+
+[dependencies]
