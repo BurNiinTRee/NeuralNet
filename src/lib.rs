@@ -44,7 +44,7 @@ where
     for<'a> &'a W: std::ops::Mul,
 {
     weights: WeightMatrix<W>,
-    nodes: Vec<Box<Node<W>>>,
+    nodes: Vec<Box<ActivationFunction<W>>>,
 }
 
 
@@ -52,29 +52,22 @@ where
 // * Make the Networks more useful by giving the possibility of somehow modifying the weights
 //   - Unsure if through backpropagation or evolution (sexual or asexual)
 
-impl Layer<f64> {
-    /// Creates a new Layer for processing `f64`s, everything else is not yet implemented
-    pub fn new(nodes: Vec<Box<Node<f64>>>, num_of_previous_nodes: usize) -> Layer<f64> {
-        let weight_width = num_of_previous_nodes;
-        let weigth_height = nodes.len();
-        let raw_matrix = (0..(weight_width * weigth_height))
-            .map(|_| 0.)
-            .collect::<Vec<_>>();
-        let weights = WeightMatrix::new(&raw_matrix, 1., weight_width, weigth_height);
-        Layer { weights, nodes }
-
-    }
-}
 
 impl<W> Layer<W>
 where
     W: Clone,
     for<'a> &'a W: std::ops::Mul<Output = W>,
 {
+    /// Creates a new Layer for processing `f64`s, everything else is not yet implemented
+    pub fn new(nodes: Vec<Box<ActivationFunction<W>>>, weights: WeightMatrix<W>) -> Layer<W> {
+        Layer { weights, nodes }
+    }
     /// Runs this layer on a set of inputs, producing outputs.
     /// #Panics
-    /// If the number of inputs does not equal the number of expected inputs of the first layer, a panic is given.
-    /// If any of the contained layers does not produce the number of outputs expected by the next layer, a panic is given.
+    /// If the number of inputs does not equal the number of expected inputs of the first layer,
+    /// a panic is given.
+    /// If any of the contained layers does not produce the number of outputs expected
+    /// by the next layer, a panic is given.
     pub fn forward(&self, inputs: Vec<W>) -> Vec<W> {
         assert_eq!(inputs.len(), self.weights.width);
         let mut output = Vec::new();
@@ -83,7 +76,7 @@ where
             for (input, weight) in inputs.iter().zip(self.weights.get_weights(i)) {
                 weighted_inputs.push(input * weight);
             }
-            let val = node.forward(weighted_inputs.as_slice(), self.weights.bias.clone());
+            let val = node.forward(weighted_inputs.as_slice(), self.weights.get_bias(i));
             output.push(val);
         }
         assert_eq!(output.len(), self.nodes.len());
@@ -92,20 +85,20 @@ where
 }
 
 
-pub trait Node<W>
+pub trait ActivationFunction<W>
 where
     W: Clone,
     for<'a> &'a W: std::ops::Mul<Output = W>,
 {
-    fn forward(&self, inputs: &[W], bias: W) -> W;
+    fn forward(&self, inputs: &[W], bias: &W) -> W;
 }
 
 
 #[derive(Copy, Clone)]
 pub struct Perceptron;
 
-impl Node<f64> for Perceptron {
-    fn forward(&self, inputs: &[f64], bias: f64) -> f64 {
+impl ActivationFunction<f64> for Perceptron {
+    fn forward(&self, inputs: &[f64], &bias: &f64) -> f64 {
         if inputs.iter().sum::<f64>() > bias {
             1.
         } else {
