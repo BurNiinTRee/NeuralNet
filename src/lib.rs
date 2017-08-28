@@ -1,6 +1,9 @@
 #[cfg(test)]
 mod tests;
 
+#[cfg(feature = "rand")]
+extern crate rand;
+
 
 
 mod matrix;
@@ -60,14 +63,15 @@ where
 {
     /// Creates a new Layer for processing `f64`s, everything else is not yet implemented
     pub fn new(nodes: Vec<Box<ActivationFunction<W>>>, weights: WeightMatrix<W>) -> Layer<W> {
+        assert_eq!(weights.height, nodes.len());
         Layer { weights, nodes }
     }
     /// Runs this layer on a set of inputs, producing outputs.
     /// #Panics
-    /// If the number of inputs does not equal the number of expected inputs of the first layer,
-    /// a panic is given.
-    /// If any of the contained layers does not produce the number of outputs expected
-    /// by the next layer, a panic is given.
+    /// Panics, if the number of inputs does not equal the number of expected inputs
+    /// of the first layer.
+    /// Panics, if any of the contained layers does not produce the number of outputs expected
+    /// by the next layer.
     pub fn forward(&self, inputs: Vec<W>) -> Vec<W> {
         assert_eq!(inputs.len(), self.weights.width);
         let mut output = Vec::new();
@@ -81,6 +85,29 @@ where
         }
         assert_eq!(output.len(), self.nodes.len());
         output
+    }
+}
+
+#[cfg(feature = "rand")]
+impl<W> Layer<W>
+where
+    W: Clone + rand::Rand,
+    for<'a> &'a W: std::ops::Mul<Output = W>,
+{
+    pub fn rnd_layer<R: rand::Rng>(
+        nodes: Vec<Box<ActivationFunction<W>>>,
+        width: usize,
+        height: usize,
+        rng: &mut R,
+    ) -> Layer<W> {
+        let raw_weights = rng.gen_iter()
+            .take((width + 1) * height)
+            .collect::<Vec<_>>();
+        let matrix = WeightMatrix::new(&raw_weights, width, height);
+        Layer {
+            weights: matrix,
+            nodes,
+        }
     }
 }
 

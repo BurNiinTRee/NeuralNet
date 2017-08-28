@@ -21,6 +21,7 @@ impl<W: Clone> WeightMatrix<W> {
 
     /// Returns the row at the given index
     pub fn get_weights(&self, idx: usize) -> &[W] {
+        // assert!(self.height > idx);
         &self.elements[idx * self.width + idx..idx * self.width + idx + self.width]
     }
 

@@ -1,7 +1,8 @@
 [package]
-name = "neuralnet"
+name = "neuraltest"
 version = "0.1.0"
 authors = ["Lars Mühmel <larsmuehmel@web.de>"]
 
 [dependencies]
-rand = { version = "0.3.16", optional = true }
+neuralnet = { path =  "../" , features = ["rand"] }
+rand = "0.3.16"

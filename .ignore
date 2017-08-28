@@ -3,3 +3,6 @@
 Cargo.lock
 /.pijul/
 /.vscode/
+/neuraltest/.vscode/
+/neuraltest/target/
+/neuraltest/Cargo.lock
