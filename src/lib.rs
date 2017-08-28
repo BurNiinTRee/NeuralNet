@@ -76,7 +76,7 @@ where
             for (input, weight) in inputs.iter().zip(self.weights.get_weights(i)) {
                 weighted_inputs.push(input * weight);
             }
-            let val = node.forward(weighted_inputs.as_slice(), self.weights.get_bias(i));
+            let val = node.forward(weighted_inputs.as_slice(), self.weights.get_bias(i).clone());
             output.push(val);
         }
         assert_eq!(output.len(), self.nodes.len());
@@ -90,19 +90,23 @@ where
     W: Clone,
     for<'a> &'a W: std::ops::Mul<Output = W>,
 {
-    fn forward(&self, inputs: &[W], bias: &W) -> W;
+    fn forward(&self, inputs: &[W], bias: W) -> W;
 }
 
 
 #[derive(Copy, Clone)]
 pub struct Perceptron;
 
-impl ActivationFunction<f64> for Perceptron {
-    fn forward(&self, inputs: &[f64], &bias: &f64) -> f64 {
-        if inputs.iter().sum::<f64>() > bias {
-            1.
+impl<W> ActivationFunction<W> for Perceptron
+where
+    for<'a> W: Clone + std::iter::Product<W> + std::cmp::PartialOrd + std::iter::Sum<&'a W>,
+    for<'a> &'a W: std::ops::Mul<Output = W>,
+{
+    fn forward(&self, inputs: &[W], bias: W) -> W {
+        if inputs.into_iter().sum::<W>() > bias {
+            std::iter::empty().product::<W>()
         } else {
-            0.
+            std::iter::empty::<&W>().sum::<W>()
         }
     }
 }
