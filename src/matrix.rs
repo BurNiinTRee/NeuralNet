@@ -21,8 +21,13 @@ impl<W: Clone> WeightMatrix<W> {
 
     /// Returns the row at the given index
     pub fn get_weights(&self, idx: usize) -> &[W] {
-        // assert!(self.height > idx);
+        assert!(self.height > idx);
         &self.elements[idx * self.width + idx..idx * self.width + idx + self.width]
+    }
+
+    pub fn get_mut_weights(&mut self, idx: usize) -> &mut [W] {
+        assert!(self.height > idx);
+        &mut self.elements[idx * self.width & idx..idx * self.width + idx + self.width]
     }
 
     pub fn get_bias(&self, idx: usize) -> &W {

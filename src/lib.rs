@@ -17,8 +17,8 @@ where
 
 impl<W: Clone> NeuralNet<W>
 where
-    W: Clone,
-    for<'a> &'a W: std::ops::Mul<Output = W>,
+    W: Clone + std::iter::Sum<W>,
+    for<'a> &'a W: std::ops::Mul<Output = W> + std::ops::Sub<Output = W>,
 {
     pub fn new(layers: Vec<Layer<W>>) -> NeuralNet<W> {
         NeuralNet { layers }
@@ -31,6 +31,19 @@ where
             prev_outputs = layer.forward(prev_outputs);
         }
         prev_outputs
+    }
+
+    pub fn train(&mut self, inputs: Vec<W>, expected_output: &[W], learning_rate: W) -> W {
+        let output = self.run(inputs);
+        let errors = output
+            .iter()
+            .zip(expected_output.iter())
+            .map(|(real, expected)| real - expected);
+        self.layers
+            .iter_mut()
+            .zip(errors)
+            .map(|(layer, error)| layer.backwards(error, learning_rate.clone()))
+            .sum()
     }
 }
 
@@ -53,7 +66,7 @@ where
 
 impl<W> Layer<W>
 where
-    W: Clone,
+    W: Clone + std::iter::Sum<W>,
     for<'a> &'a W: std::ops::Mul<Output = W>,
 {
     pub fn new(nodes: Vec<Box<ActivationFunction<W>>>, weights: WeightMatrix<W>) -> Layer<W> {
@@ -79,6 +92,15 @@ where
         }
         assert_eq!(output.len(), self.nodes.len());
         output
+    }
+
+    pub fn backwards(&mut self, error: W, learning_rate: W) -> W {
+        (0..self.weights.height)
+            .map(|idx| {
+                let weights = self.weights.get_mut_weights(idx);
+                self.nodes[idx].backward(&error, weights, learning_rate.clone())
+            })
+            .sum()
     }
 }
 
@@ -111,6 +133,7 @@ where
     for<'a> &'a W: std::ops::Mul<Output = W>,
 {
     fn forward(&self, inputs: &[W], bias: W) -> W;
+    fn backward(&self, error: &W, weights: &mut [W], learning_rate: W) -> W;
 }
 
 #[derive(Copy, Clone)]
@@ -119,7 +142,7 @@ pub struct Perceptron;
 impl<W> ActivationFunction<W> for Perceptron
 where
     for<'a> W: Clone + std::iter::Product<W> + std::cmp::PartialOrd + std::iter::Sum<&'a W>,
-    for<'a> &'a W: std::ops::Mul<Output = W>,
+    for<'a> &'a W: std::ops::Mul<Output = W> + std::ops::Sub<Output = W>,
 {
     fn forward(&self, inputs: &[W], bias: W) -> W {
         if inputs.into_iter().sum::<W>() > bias {
@@ -127,5 +150,12 @@ where
         } else {
             std::iter::empty::<&W>().sum::<W>()
         }
+    }
+    fn backward(&self, error: &W, weights: &mut [W], learning_rate: W) -> W {
+        let correction = &learning_rate * error;
+        for w in weights.iter_mut() {
+            *w = &*w * &correction;
+        }
+        error * &((&std::iter::empty::<&W>().sum::<W>() - &learning_rate))
     }
 }
