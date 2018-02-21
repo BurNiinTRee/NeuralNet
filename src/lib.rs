@@ -4,8 +4,6 @@ mod tests;
 #[cfg(feature = "rand")]
 extern crate rand;
 
-
-
 mod matrix;
 pub use matrix::WeightMatrix;
 
@@ -28,7 +26,6 @@ where
     pub fn run(&self, inputs: Vec<W>) -> Vec<W> {
         assert_eq!(inputs.len(), self.layers[0].weights.width);
 
-
         let mut prev_outputs = inputs;
         for layer in &self.layers {
             prev_outputs = layer.forward(prev_outputs);
@@ -50,24 +47,21 @@ where
     nodes: Vec<Box<ActivationFunction<W>>>,
 }
 
-
 // TODO:
 // * Make the Networks more useful by giving the possibility of somehow modifying the weights
 //   - Unsure if through backpropagation or evolution (sexual or asexual)
-
 
 impl<W> Layer<W>
 where
     W: Clone,
     for<'a> &'a W: std::ops::Mul<Output = W>,
 {
-    /// Creates a new Layer for processing `f64`s, everything else is not yet implemented
     pub fn new(nodes: Vec<Box<ActivationFunction<W>>>, weights: WeightMatrix<W>) -> Layer<W> {
         assert_eq!(weights.height, nodes.len());
         Layer { weights, nodes }
     }
     /// Runs this layer on a set of inputs, producing outputs.
-    /// #Panics
+    /// # Panics
     /// Panics, if the number of inputs does not equal the number of expected inputs
     /// of the first layer.
     /// Panics, if any of the contained layers does not produce the number of outputs expected
@@ -111,7 +105,6 @@ where
     }
 }
 
-
 pub trait ActivationFunction<W>
 where
     W: Clone,
@@ -119,7 +112,6 @@ where
 {
     fn forward(&self, inputs: &[W], bias: W) -> W;
 }
-
 
 #[derive(Copy, Clone)]
 pub struct Perceptron;

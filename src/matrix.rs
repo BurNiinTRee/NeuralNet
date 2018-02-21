@@ -8,7 +8,7 @@ pub struct WeightMatrix<W: Clone> {
 
 impl<W: Clone> WeightMatrix<W> {
     /// Creates a new `WeightMatrix` from the given elements, the bias, aswell as its size
-    /// #Panics
+    /// # Panics
     /// Giving a slice, with a length not equal to the product of the given dimensions gives a panic
     pub fn new(elements: &[W], width: usize, height: usize) -> WeightMatrix<W> {
         assert_eq!((width + 1) * height, elements.len());
